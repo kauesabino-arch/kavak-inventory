@@ -651,6 +651,11 @@
       <button class="btn btn-outline" onclick="openCreateUser()" style="margin-top:4px">+ Novo usuário</button>
     </div>
 
+    <div id="export-panel" style="display:none;margin-top:16px">
+      <div class="section-title">Exportar dados</div>
+      <button class="btn btn-outline" onclick="exportCSV()" id="export-btn">⬇️ Exportar CSV</button>
+    </div>
+
     <button class="btn btn-danger" onclick="doLogout()" style="margin-top:28px">Sair da conta</button>
   </div>
   <nav class="bottom-nav">
@@ -1004,8 +1009,47 @@ function loadProfile() {
   roleEl.style.border = `1px solid ${color}55`;
   roleEl.textContent = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
   const isAdmin = currentUser.role === 'admin';
+  const isSupOrAdmin = currentUser.role === 'supervisor' || currentUser.role === 'admin';
   document.getElementById('admin-panel').style.display = isAdmin ? 'block' : 'none';
+  document.getElementById('export-panel').style.display = isSupOrAdmin ? 'block' : 'none';
   if (isAdmin) loadUsers();
+}
+
+async function exportCSV() {
+  const btn = document.getElementById('export-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Exportando...';
+  try {
+    const records = await sb('inventory?order=created_at.desc&select=*');
+    if (!records || records.length === 0) {
+      toast('Nenhum registro para exportar.', 'warning');
+      btn.disabled = false;
+      btn.textContent = '⬇️ Exportar CSV';
+      return;
+    }
+
+    const headers = ['ID', 'Colaborador', 'User ID', 'Rua', 'SKU', 'Quantidade', 'Observações', 'Data/Hora', 'Editado Por', 'Editado Em'];
+    const rows = records.map(r => [
+      r.id, r.user_name, r.user_id, r.rua, r.sku,
+      r.quantidade, r.observacoes || '', fmtDate(r.created_at),
+      r.edited_by || '', r.edited_at ? fmtDate(r.edited_at) : ''
+    ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const date = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `kavak-inventario-${date}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast(`✓ ${records.length} registros exportados!`, 'success');
+  } catch(e) {
+    toast('Erro ao exportar.', 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = '⬇️ Exportar CSV';
 }
 
 async function loadUsers() {
