@@ -1120,12 +1120,23 @@ function scanFrame() {
   const video = document.getElementById('scanner-video');
   if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
   const canvas = document.getElementById('scanner-canvas');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+
+  const vw = video.videoWidth;
+  const vh = video.videoHeight;
+
+  // Crop to center 60% of the frame — matches the blue square on screen
+  const cropSize = Math.min(vw, vh) * 0.6;
+  const cropX = (vw - cropSize) / 2;
+  const cropY = (vh - cropSize) / 2;
+
+  canvas.width = cropSize;
+  canvas.height = cropSize;
+
   const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0);
+  ctx.drawImage(video, cropX, cropY, cropSize, cropSize, 0, 0, cropSize, cropSize);
+
   try {
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, cropSize, cropSize);
     if (typeof jsQR !== 'undefined') {
       const code = jsQR(imageData.data, imageData.width, imageData.height);
       if (code) onScanned(code.data);
