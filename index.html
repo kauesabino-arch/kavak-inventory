@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0057FF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kavak Inventory">
+<link rel="manifest" href="manifest.json">
+<title>Kavak Inventory</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --blue: #0057FF;
+    --bg: #0D0D0D;
+    --card: #1A1A1A;
+    --surface: #242424;
+    --border: #2C2C2C;
+    --text: #FFFFFF;
+    --text2: #9E9E9E;
+    --success: #00C853;
+    --error: #FF3B30;
+    --warning: #FFCC00;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    max-width: 480px;
+    margin: 0 auto;
+    overflow-x: hidden;
+  }
+
+  /* ── Layout ── */
+  .screen { display: none; min-height: 100vh; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  .scroll-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 20px;
+    padding-bottom: 80px;
+  }
+
+  /* ── Bottom Nav ── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 100;
+  }
+  .nav-item {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 11px;
+    transition: color 0.2s;
+  }
+  .nav-item.active { color: var(--blue); }
+  .nav-icon { font-size: 22px; display: block; margin-bottom: 2px; }
+
+  /* ── Typography ── */
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
+  h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { color: var(--text2); font-size: 13px; margin-bottom: 28px; }
+
+  /* ── Logo ── */
+  .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 44px; }
+  .logo-box {
+    width: 38px; height: 38px;
+    background: var(--blue);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 900; color: #fff;
+  }
+  .logo-text { font-size: 20px; font-weight: 700; }
+
+  /* ── Inputs ── */
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+  .field input, .field textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    color: var(--text);
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+  .field input:focus, .field textarea:focus { border-color: var(--blue); }
+  .field textarea { height: 80px; resize: none; }
+
+  /* ── Buttons ── */
+  .btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.2s;
+    margin-bottom: 10px;
+  }
+  .btn:active { opacity: 0.8; }
+  .btn-primary { background: var(--blue); color: #fff; }
+  .btn-outline { background: transparent; color: var(--blue); border: 1.5px solid var(--blue); }
+  .btn-danger { background: rgba(255,59,48,0.12); color: var(--error); border: none; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+
+  /* ── QR Field ── */
+  .qr-field {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .qr-field.filled { border-color: var(--blue); }
+  .qr-field-icon { font-size: 22px; }
+  .qr-field-info { flex: 1; }
+  .qr-field-label { font-size: 11px; color: var(--text2); }
+  .qr-field-value { font-size: 14px; font-weight: 500; margin-top: 2px; }
+  .qr-field-value.empty { color: var(--text2); font-weight: 400; }
+
+  /* ── Tags ── */
+  .tag { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 700; }
+  .tag-blue { background: var(--blue); color: #fff; }
+  .tag-dark { background: var(--surface); color: var(--text); }
+  .tag-sync { background: rgba(0,200,83,0.15); color: var(--success); }
+  .tag-pending { background: rgba(255,204,0,0.15); color: var(--warning); }
+
+  /* ── Divider ── */
+  .divider { height: 1px; background: var(--border); margin: 10px 0; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--surface);
+    color: var(--text);
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 999;
+    transition: transform 0.3s;
+    border: 1px solid var(--border);
+    white-space: nowrap;
+    max-width: 90vw;
+    text-align: center;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.success { border-color: var(--success); color: var(--success); }
+  #toast.error { border-color: var(--error); color: var(--error); }
+  #toast.warning { border-color: var(--warning); color: var(--warning); }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: flex-end;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: var(--card);
+    border-radius: 20px 20px 0 0;
+    padding: 24px;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .modal-actions .btn { flex: 1; margin: 0; }
+
+  /* ── QR Scanner Modal ── */
+  #scanner-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 300;
+    flex-direction: column;
+  }
+  #scanner-overlay.active { display: flex; }
+  #scanner-video { width: 100%; height: 100%; object-fit: cover; }
+  .scanner-ui {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .scanner-frame {
+    width: 240px;
+    height: 240px;
+    border: 2px solid var(--blue);
+    border-radius: 12px;
+  }
+  .scanner-hint {
+    color: rgba(255,255,255,0.8);
+    font-size: 13px;
+    margin-top: 16px;
+    background: rgba(0,0,0,0.5);
+    padding: 6px 14px;
+    border-radius: 20px;
+  }
+  .scanner-label {
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+  .scanner-close {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0,0,0,0.6);
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    border-radius: 22px;
+    cursor: pointer;
+    pointer-events: all;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .scanner-manual {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--card);
+    padding: 16px;
+    pointer-events: all;
+  }
+  .scanner-manual-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text2);
+    font-size: 13px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px 0;
+    margin-bottom: 10px;
+  }
+  .scanner-manual-row { display: flex; gap: 8px; }
+  .scanner-manual-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+  }
+  .scanner-manual-btn {
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* ── Stats ── */
+  .stats { display: flex; gap: 8px; margin-bottom: 12px; }
+  .stat {
+    background: rgba(0,87,255,0.1);
+    border: 1px solid rgba(0,87,255,0.25);
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 12px;
+    color: var(--blue);
+  }
+  .stat.warn { background: rgba(255,204,0,0.1); border-color: rgba(255,204,0,0.25); color: var(--warning); }
+
+  /* ── Search ── */
+  .search-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .search-wrap input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+  }
+
+  /* ── Record card ── */
+  .record-tags { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; align-items: center; }
+  .record-qty { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .record-obs { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+  .record-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--text2); }
+  .record-edited { font-size: 10px; color: var(--warning); margin-top: 3px; }
+  .edit-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 2px; }
+
+  /* ── Profile ── */
+  .profile-card { display: flex; align-items: center; gap: 14px; }
+  .avatar {
+    width: 52px; height: 52px;
+    background: var(--blue);
+    border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 700; flex-shrink: 0;
+  }
+  .role-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+  .user-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .user-mini-avatar {
+    width: 36px; height: 36px;
+    background: var(--blue);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; flex-shrink: 0;
+  }
+  .status-btn {
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: none;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .status-active { background: rgba(0,200,83,0.15); color: var(--success); }
+  .status-inactive { background: rgba(255,59,48,0.15); color: var(--error); }
+
+  /* ── Role chips ── */
+  .role-chips { display: flex; gap: 6px; margin-bottom: 16px; }
+  .role-chip {
+    flex: 1;
+    padding: 8px 4px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--text2);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: capitalize;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .role-chip.active { border-color: var(--blue); background: rgba(0,87,255,0.15); color: var(--blue); }
+
+  /* ── Sync button ── */
+  .sync-btn {
+    background: rgba(255,204,0,0.15);
+    border: none;
+    border-radius: 8px;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--warning);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text2);
+  }
+  .empty-icon { font-size: 48px; opacity: 0.3; margin-bottom: 12px; }
+
+  .back-btn {
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .section-title { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+  .header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+
+<!-- ── TOAST ── -->
+<div id="toast"></div>
+
+<!-- ── QR SCANNER ── -->
+<div id="scanner-overlay">
+  <video id="scanner-video" autoplay playsinline muted></video>
+  <canvas id="scanner-canvas" style="display:none"></canvas>
+  <div class="scanner-ui">
+    <div class="scanner-label" id="scanner-label">Ler QR Code</div>
+    <div class="scanner-frame"></div>
+    <div class="scanner-hint">Aponte a câmera para o QR Code</div>
+  </div>
+  <button class="scanner-close" onclick="closeScanner()">✕</button>
+  <div class="scanner-manual">
+    <button class="scanner-manual-toggle" onclick="toggleManual()">⌨️ Inserir manualmente</button>
+    <div id="manual-row" style="display:none" class="scanner-manual-row">
+      <input id="manual-input" class="scanner-manual-input" placeholder="Digite o código">
+      <button class="scanner-manual-btn" onclick="submitManual()">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── EDIT MODAL ── -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title" id="edit-modal-title">Editar registro</div>
+    <div class="field"><label>Quantidade</label><input type="number" id="edit-qty"></div>
+    <div class="field"><label>Observações</label><textarea id="edit-obs"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeEditModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEdit()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CREATE USER MODAL ── -->
+<div class="modal-overlay" id="create-user-modal">
+  <div class="modal">
+    <div class="modal-title">Novo Usuário</div>
+    <div class="field"><label>Nome</label><input id="cu-name" placeholder="Nome completo"></div>
+    <div class="field"><label>Usuário</label><input id="cu-user" placeholder="username" autocomplete="off"></div>
+    <div class="field"><label>Senha</label><input type="password" id="cu-pass" placeholder="Mínimo 6 caracteres"></div>
+    <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:6px">Função</label>
+    <div class="role-chips">
+      <button class="role-chip active" data-role="colaborador" onclick="selectRole(this)">colaborador</button>
+      <button class="role-chip" data-role="supervisor" onclick="selectRole(this)">supervisor</button>
+      <button class="role-chip" data-role="admin" onclick="selectRole(this)">admin</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeCreateUser()">Cancelar</button>
+      <button class="btn btn-primary" onclick="createUser()">Criar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SCREEN: LOGIN -->
+<!-- ══════════════════════════════════════════ -->
+<div class="screen active" id="screen-login">
+  <div class="scroll-content">
+    <div class="logo">
+      <div class="logo-box">K</div>
+      <div class="logo-text">kavak</div>
+    </div>
+    <h1>Bem-vindo</h1>
+    <p class="subtitle">Acesse sua conta para continuar</p>
+    <div class="field"><label>Usuário</label><input id="login-user" placeholder="Digite seu usuário" autocomplete="username"></div>
+    <div class="field"><label>Senha</label><input id="login-pass" type="password" placeholder="Digite sua senha" autocomplete="current-password"></div>
+    <button class="btn btn-primary" onclick="doLogin()">Entrar</button>
+    <button class="btn btn-outline" onclick="showScreen('register')">Criar conta</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SCREEN: REGISTER -->
+<!-- ══════════════════════════════════════════ -->
+<div class="screen" id="screen-register">
+  <div class="scroll-content">
+    <button class="back-btn" onclick="showScreen('login')">← Voltar</button>
+    <h1>Criar conta</h1>
+    <p class="subtitle">Preencha os dados abaixo</p>
+    <div class="field"><label>Nome completo</label><input id="reg-name" placeholder="Seu nome"></div>
+    <div class="field"><label>Usuário</label><input id="reg-user" placeholder="Escolha um usuário" autocomplete="off"></div>
+    <div class="field"><label>Senha</label><input id="reg-pass" type="password" placeholder="Mínimo 6 caracteres"></div>
+    <div class="field"><label>Confirmar senha</label><input id="reg-pass2" type="password" placeholder="Repita a senha"></div>
+    <button class="btn btn-primary" onclick="doRegister()">Criar conta</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SCREEN: FORMULÁRIO -->
+<!-- ══════════════════════════════════════════ -->
+<div class="screen" id="screen-form">
+  <div class="scroll-content">
+    <h2>Novo Inventário</h2>
+    <p class="subtitle">Leia os QR Codes e informe a quantidade</p>
+
+    <div class="qr-field" id="qr-rua" onclick="openScanner('Rua')">
+      <span class="qr-field-icon">🏭</span>
+      <div class="qr-field-info">
+        <div class="qr-field-label">Rua</div>
+        <div class="qr-field-value empty" id="qr-rua-val">Toque para ler QR Code</div>
+      </div>
+      <span id="qr-rua-icon">⬜</span>
+    </div>
+
+    <div class="qr-field" id="qr-sku" onclick="openScanner('SKU')">
+      <span class="qr-field-icon">📦</span>
+      <div class="qr-field-info">
+        <div class="qr-field-label">SKU</div>
+        <div class="qr-field-value empty" id="qr-sku-val">Toque para ler QR Code</div>
+      </div>
+      <span id="qr-sku-icon">⬜</span>
+    </div>
+
+    <div class="field"><label>Quantidade</label><input id="form-qty" type="number" placeholder="0" inputmode="numeric"></div>
+    <div class="field"><label>Observações (opcional)</label><textarea id="form-obs" placeholder="Ex: peças danificadas..."></textarea></div>
+    <button class="btn btn-primary" onclick="submitForm()" id="form-btn">✓ Registrar</button>
+
+    <p style="text-align:center;font-size:12px;color:var(--text2);margin-top:12px">
+      Registrando como <span id="form-username" style="color:var(--blue)"></span>
+    </p>
+  </div>
+  <nav class="bottom-nav">
+    <div class="nav-item" onclick="switchTab('historico')"><span class="nav-icon">🕐</span>Histórico</div>
+    <div class="nav-item active" onclick="switchTab('form')"><span class="nav-icon">➕</span>Inventário</div>
+    <div class="nav-item" onclick="switchTab('perfil')"><span class="nav-icon">👤</span>Perfil</div>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SCREEN: HISTÓRICO -->
+<!-- ══════════════════════════════════════════ -->
+<div class="screen" id="screen-historico">
+  <div class="scroll-content">
+    <div class="header-row">
+      <h2>Histórico</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="sync-btn" id="sync-btn" onclick="syncPending()" style="display:none">☁️ <span id="sync-count">0</span></button>
+        <button onclick="loadRecords()" style="background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer">↻</button>
+      </div>
+    </div>
+
+    <div class="search-wrap">
+      <span style="color:var(--text2)">🔍</span>
+      <input id="search-input" placeholder="Buscar Rua, SKU, colaborador..." oninput="filterRecords()">
+    </div>
+
+    <div class="stats" id="stats-row"></div>
+    <div id="records-list"></div>
+  </div>
+  <nav class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('historico')"><span class="nav-icon">🕐</span>Histórico</div>
+    <div class="nav-item" onclick="switchTab('form')"><span class="nav-icon">➕</span>Inventário</div>
+    <div class="nav-item" onclick="switchTab('perfil')"><span class="nav-icon">👤</span>Perfil</div>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SCREEN: PERFIL -->
+<!-- ══════════════════════════════════════════ -->
+<div class="screen" id="screen-perfil">
+  <div class="scroll-content">
+    <h2>Perfil</h2>
+    <div class="card" style="margin-bottom:20px">
+      <div class="profile-card">
+        <div class="avatar" id="profile-avatar">K</div>
+        <div>
+          <div style="font-size:16px;font-weight:600" id="profile-name"></div>
+          <div style="font-size:13px;color:var(--text2)" id="profile-username"></div>
+          <div class="role-badge" id="profile-role"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="admin-panel" style="display:none">
+      <div class="header-row">
+        <div class="section-title">Usuários</div>
+        <button onclick="loadUsers()" style="background:none;border:none;color:var(--text2);cursor:pointer">↻</button>
+      </div>
+      <div id="users-list"></div>
+      <button class="btn btn-outline" onclick="openCreateUser()" style="margin-top:4px">+ Novo usuário</button>
+    </div>
+
+    <button class="btn btn-danger" onclick="doLogout()" style="margin-top:28px">Sair da conta</button>
+  </div>
+  <nav class="bottom-nav">
+    <div class="nav-item" onclick="switchTab('historico')"><span class="nav-icon">🕐</span>Histórico</div>
+    <div class="nav-item" onclick="switchTab('form')"><span class="nav-icon">➕</span>Inventário</div>
+    <div class="nav-item active" onclick="switchTab('perfil')"><span class="nav-icon">👤</span>Perfil</div>
+  </nav>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// SUPABASE CONFIG
+// ══════════════════════════════════════════════════════════════
+const SB_URL = 'https://qctppxvcgqxztluxmkbb.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjdHBweHZjZ3F4enRsdXhta2JiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NzE5NDAsImV4cCI6MjA4OTM0Nzk0MH0.eEoDncsCCCawpo80MNziyfGvXvOHy7jIeMxlN2LLIZQ';
+
+async function sb(path, options = {}) {
+  const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': `Bearer ${SB_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': options.prefer || 'return=representation',
+      ...(options.headers || {})
+    }
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(text);
+  return text ? JSON.parse(text) : null;
+}
+
+// ══════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════
+const hash = (str) => {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = Math.imul(31, h) + str.charCodeAt(i) | 0;
+  return Math.abs(h).toString(36) + str.length.toString(36);
+};
+
+const uuid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+  const r = Math.random() * 16 | 0;
+  return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+});
+
+const getSession = () => JSON.parse(localStorage.getItem('kv_session') || 'null');
+const saveSession = (s) => localStorage.setItem('kv_session', JSON.stringify(s));
+const clearSession = () => localStorage.removeItem('kv_session');
+
+// ══════════════════════════════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════════════════════════════
+let currentUser = null;
+let scannerStream = null;
+let scannerInterval = null;
+let allRecords = [];
+let editingRecord = null;
+let createUserRole = 'colaborador';
+let formRua = null;
+let formSku = null;
+let scanType = null;
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+async function init() {
+  // Create default admin if not exists
+  try {
+    const existing = await sb('users?username=eq.admin&select=id');
+    if (!existing || existing.length === 0) {
+      await sb('users', {
+        method: 'POST',
+        prefer: 'return=minimal',
+        body: JSON.stringify({ id: 'admin-001', name: 'Administrador', username: 'admin', hash: hash('admin123'), role: 'admin', active: true })
+      });
+    }
+  } catch(e) { console.log('Init error:', e); }
+
+  const session = getSession();
+  if (session) {
+    currentUser = session;
+    showMainApp();
+  }
+}
+
+init();
+
+// ══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════════
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+function showMainApp() {
+  switchTab('form');
+  document.getElementById('form-username').textContent = currentUser.name;
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (tab === 'form') {
+    showScreen('form');
+  } else if (tab === 'historico') {
+    showScreen('historico');
+    loadRecords();
+  } else if (tab === 'perfil') {
+    showScreen('perfil');
+    loadProfile();
+  }
+  const activeScreen = document.querySelector('.screen.active');
+  if (activeScreen) {
+    const navItems = activeScreen.querySelectorAll('.nav-item');
+    const map = { 'screen-form': 1, 'screen-historico': 0, 'screen-perfil': 2 };
+    navItems.forEach(n => n.classList.remove('active'));
+    if (navItems[map[activeScreen.id]] !== undefined) navItems[map[activeScreen.id]].classList.add('active');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════════════════════
+async function doLogin() {
+  const username = document.getElementById('login-user').value.trim();
+  const password = document.getElementById('login-pass').value;
+  if (!username || !password) return toast('Preencha todos os campos', 'error');
+  try {
+    const users = await sb(`users?username=eq.${encodeURIComponent(username.toLowerCase())}&hash=eq.${hash(password)}&active=eq.true&select=*`);
+    if (!users || users.length === 0) return toast('Usuário ou senha incorretos', 'error');
+    currentUser = users[0];
+    saveSession(currentUser);
+    document.getElementById('login-user').value = '';
+    document.getElementById('login-pass').value = '';
+    showMainApp();
+  } catch(e) { toast('Erro ao conectar. Tente novamente.', 'error'); }
+}
+
+async function doRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const username = document.getElementById('reg-user').value.trim();
+  const pass = document.getElementById('reg-pass').value;
+  const pass2 = document.getElementById('reg-pass2').value;
+  if (!name || !username || !pass) return toast('Preencha todos os campos', 'error');
+  if (username.length < 3) return toast('Usuário deve ter pelo menos 3 caracteres', 'error');
+  if (pass.length < 6) return toast('Senha deve ter pelo menos 6 caracteres', 'error');
+  if (pass !== pass2) return toast('As senhas não coincidem', 'error');
+  try {
+    const existing = await sb(`users?username=eq.${encodeURIComponent(username.toLowerCase())}&select=id`);
+    if (existing && existing.length > 0) return toast('Usuário já existe', 'error');
+    await sb('users', {
+      method: 'POST',
+      prefer: 'return=minimal',
+      body: JSON.stringify({ id: uuid(), name, username: username.toLowerCase(), hash: hash(pass), role: 'colaborador', active: true })
+    });
+    toast('Conta criada! Faça login.', 'success');
+    document.getElementById('reg-name').value = '';
+    document.getElementById('reg-user').value = '';
+    document.getElementById('reg-pass').value = '';
+    document.getElementById('reg-pass2').value = '';
+    setTimeout(() => showScreen('login'), 1000);
+  } catch(e) { toast('Erro ao criar conta.', 'error'); }
+}
+
+function doLogout() {
+  if (!confirm('Deseja sair da conta?')) return;
+  currentUser = null;
+  clearSession();
+  showScreen('login');
+}
+
+// ══════════════════════════════════════════════════════════════
+// FORMULÁRIO
+// ══════════════════════════════════════════════════════════════
+async function submitForm() {
+  if (!formRua) return toast('Leia o QR Code da Rua', 'error');
+  if (!formSku) return toast('Leia o QR Code do SKU', 'error');
+  const qty = parseInt(document.getElementById('form-qty').value);
+  if (isNaN(qty)) return toast('Informe a quantidade', 'error');
+  const obs = document.getElementById('form-obs').value.trim();
+
+  const btn = document.getElementById('form-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div>';
+
+  const record = {
+    id: uuid(),
+    user_id: currentUser.id,
+    user_name: currentUser.name,
+    rua: formRua.toUpperCase(),
+    sku: formSku.toUpperCase(),
+    quantidade: qty,
+    observacoes: obs || null,
+    created_at: new Date().toISOString()
+  };
+
+  try {
+    await sb('inventory', { method: 'POST', prefer: 'return=minimal', body: JSON.stringify(record) });
+    toast('✓ Registrado!', 'success');
+  } catch(e) {
+    toast('Erro ao salvar. Tente novamente.', 'error');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '✓ Registrar';
+  formRua = null; formSku = null;
+  setQrField('rua', null);
+  setQrField('sku', null);
+  document.getElementById('form-qty').value = '';
+  document.getElementById('form-obs').value = '';
+}
+
+function setQrField(type, value) {
+  const el = document.getElementById('qr-' + type);
+  const val = document.getElementById('qr-' + type + '-val');
+  const icon = document.getElementById('qr-' + type + '-icon');
+  if (value) {
+    val.textContent = value;
+    val.className = 'qr-field-value';
+    el.classList.add('filled');
+    icon.textContent = '✅';
+  } else {
+    val.textContent = 'Toque para ler QR Code';
+    val.className = 'qr-field-value empty';
+    el.classList.remove('filled');
+    icon.textContent = '⬜';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// HISTÓRICO
+// ══════════════════════════════════════════════════════════════
+async function loadRecords() {
+  document.getElementById('records-list').innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div>Carregando...</div>';
+  try {
+    const isSup = currentUser.role === 'supervisor' || currentUser.role === 'admin';
+    const filter = isSup ? '' : `user_id=eq.${currentUser.id}&`;
+    const records = await sb(`inventory?${filter}order=created_at.desc&select=*`);
+    allRecords = records || [];
+    document.getElementById('sync-btn').style.display = 'none';
+    renderRecords(allRecords);
+  } catch(e) {
+    document.getElementById('records-list').innerHTML = '<div class="empty-state"><div class="empty-icon">❌</div>Erro ao carregar registros</div>';
+  }
+}
+
+function filterRecords() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const filtered = q ? allRecords.filter(r =>
+    r.rua?.toLowerCase().includes(q) ||
+    r.sku?.toLowerCase().includes(q) ||
+    r.user_name?.toLowerCase().includes(q)
+  ) : allRecords;
+  renderRecords(filtered);
+}
+
+function renderRecords(records) {
+  const stats = document.getElementById('stats-row');
+  stats.innerHTML = `<div class="stat">${records.length} registros</div>`;
+  const list = document.getElementById('records-list');
+  if (!records.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div>Nenhum registro encontrado</div>';
+    return;
+  }
+  const isSupOrAdmin = currentUser.role === 'supervisor' || currentUser.role === 'admin';
+  list.innerHTML = records.map(r => {
+    const canEdit = isSupOrAdmin || r.user_id === currentUser.id;
+    const canDelete = isSupOrAdmin;
+    return `
+    <div class="card">
+      <div class="record-tags">
+        <span class="tag tag-blue">${r.rua}</span>
+        <span class="tag tag-dark">${r.sku}</span>
+        <span class="tag tag-sync" style="margin-left:auto">✓ Sync</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px">
+        <div class="record-qty" style="flex:1">📦 ${r.quantidade} unid.</div>
+        ${canEdit ? `<button class="edit-btn" onclick="openEditModal('${r.id}','${r.sku}',${r.quantidade},'${(r.observacoes||'').replace(/'/g,"\\'")}')">✏️</button>` : ''}
+        ${canDelete ? `<button class="edit-btn" onclick="deleteRecord('${r.id}')" style="color:var(--error)">🗑️</button>` : ''}
+      </div>
+      ${r.observacoes ? `<div class="record-obs">${r.observacoes}</div>` : ''}
+      <div class="divider"></div>
+      <div class="record-meta"><span>👤 ${r.user_name}</span><span>${fmtDate(r.created_at)}</span></div>
+      ${r.edited_by ? `<div class="record-edited">✏️ Editado por ${r.edited_by}</div>` : ''}
+    </div>
+  `}).join('');
+}
+
+async function deleteRecord(id) {
+  if (!confirm('Apagar este registro permanentemente?')) return;
+  try {
+    await sb(`inventory?id=eq.${id}`, { method: 'DELETE', prefer: 'return=minimal' });
+    toast('Registro apagado!', 'success');
+    loadRecords();
+  } catch(e) { toast('Erro ao apagar registro.', 'error'); }
+}
+
+function fmtDate(iso) {
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(-2)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// EDIT MODAL
+// ══════════════════════════════════════════════════════════════
+function openEditModal(id, sku, qty, obs) {
+  editingRecord = { id, sku, quantidade: qty, observacoes: obs };
+  document.getElementById('edit-modal-title').textContent = `Editar — ${sku}`;
+  document.getElementById('edit-qty').value = qty;
+  document.getElementById('edit-obs').value = obs || '';
+  document.getElementById('edit-modal').classList.add('active');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('active');
+  editingRecord = null;
+}
+
+async function saveEdit() {
+  if (!editingRecord) return;
+  try {
+    await sb(`inventory?id=eq.${editingRecord.id}`, {
+      method: 'PATCH',
+      prefer: 'return=minimal',
+      body: JSON.stringify({
+        quantidade: parseInt(document.getElementById('edit-qty').value) || editingRecord.quantidade,
+        observacoes: document.getElementById('edit-obs').value.trim() || null,
+        edited_by: currentUser.name,
+        edited_at: new Date().toISOString()
+      })
+    });
+    closeEditModal();
+    loadRecords();
+    toast('Registro atualizado!', 'success');
+  } catch(e) { toast('Erro ao atualizar.', 'error'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// PERFIL / ADMIN
+// ══════════════════════════════════════════════════════════════
+function loadProfile() {
+  document.getElementById('profile-name').textContent = currentUser.name;
+  document.getElementById('profile-username').textContent = '@' + currentUser.username;
+  document.getElementById('profile-avatar').textContent = currentUser.name[0].toUpperCase();
+  const roleEl = document.getElementById('profile-role');
+  const colors = { admin: '#FF9500', supervisor: '#0057FF', colaborador: '#9E9E9E' };
+  const color = colors[currentUser.role] || '#9E9E9E';
+  roleEl.style.background = color + '22';
+  roleEl.style.color = color;
+  roleEl.style.border = `1px solid ${color}55`;
+  roleEl.textContent = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
+  const isAdmin = currentUser.role === 'admin';
+  document.getElementById('admin-panel').style.display = isAdmin ? 'block' : 'none';
+  if (isAdmin) loadUsers();
+}
+
+async function loadUsers() {
+  try {
+    const users = await sb('users?order=name.asc&select=*');
+    const list = document.getElementById('users-list');
+    list.innerHTML = (users || []).map(u => `
+      <div class="user-row">
+        <div class="user-mini-avatar" style="${u.id === currentUser.id ? '' : 'background:var(--surface)'}">${u.name[0].toUpperCase()}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${u.name}</div>
+          <div style="font-size:11px;color:var(--text2)">@${u.username} · ${u.role}</div>
+        </div>
+        ${u.id !== currentUser.id ? `
+          <button class="status-btn ${u.active ? 'status-active' : 'status-inactive'}" onclick="toggleUser('${u.id}',${u.active},'${u.name}')" style="margin-right:6px">${u.active ? 'Ativo' : 'Inativo'}</button>
+          <button onclick="deleteUser('${u.id}','${u.name}')" style="background:rgba(255,59,48,0.12);border:none;border-radius:8px;padding:4px 8px;color:var(--error);cursor:pointer;font-size:14px">🗑️</button>
+        ` : ''}
+      </div>
+    `).join('');
+  } catch(e) {}
+}
+
+async function deleteUser(id, name) {
+  if (!confirm(`Apagar a conta de "${name}" permanentemente? Esta ação não pode ser desfeita.`)) return;
+  try {
+    await sb(`users?id=eq.${id}`, { method: 'DELETE', prefer: 'return=minimal' });
+    toast('Conta apagada!', 'success');
+    loadUsers();
+  } catch(e) { toast('Erro ao apagar conta.', 'error'); }
+}
+
+async function toggleUser(id, isActive, name) {
+  const action = isActive ? 'desativar' : 'ativar';
+  if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} ${name}?`)) return;
+  try {
+    await sb(`users?id=eq.${id}`, { method: 'PATCH', prefer: 'return=minimal', body: JSON.stringify({ active: !isActive }) });
+    loadUsers();
+  } catch(e) { toast('Erro ao atualizar usuário.', 'error'); }
+}
+
+function openCreateUser() {
+  document.getElementById('cu-name').value = '';
+  document.getElementById('cu-user').value = '';
+  document.getElementById('cu-pass').value = '';
+  createUserRole = 'colaborador';
+  document.querySelectorAll('.role-chip').forEach(c => c.classList.toggle('active', c.dataset.role === 'colaborador'));
+  document.getElementById('create-user-modal').classList.add('active');
+}
+
+function closeCreateUser() {
+  document.getElementById('create-user-modal').classList.remove('active');
+}
+
+function selectRole(el) {
+  document.querySelectorAll('.role-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  createUserRole = el.dataset.role;
+}
+
+async function createUser() {
+  const name = document.getElementById('cu-name').value.trim();
+  const username = document.getElementById('cu-user').value.trim();
+  const pass = document.getElementById('cu-pass').value;
+  if (!name || !username || pass.length < 6) return toast('Preencha todos os campos. Senha mínimo 6 caracteres.', 'error');
+  try {
+    const existing = await sb(`users?username=eq.${encodeURIComponent(username.toLowerCase())}&select=id`);
+    if (existing && existing.length > 0) return toast('Usuário já existe', 'error');
+    await sb('users', { method: 'POST', prefer: 'return=minimal', body: JSON.stringify({ id: uuid(), name, username: username.toLowerCase(), hash: hash(pass), role: createUserRole, active: true }) });
+    closeCreateUser();
+    loadUsers();
+    toast('Usuário criado!', 'success');
+  } catch(e) { toast('Erro ao criar usuário.', 'error'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// QR SCANNER
+// ══════════════════════════════════════════════════════════════
+function openScanner(type) {
+  scanType = type;
+  document.getElementById('scanner-label').textContent = `Ler QR Code — ${type}`;
+  document.getElementById('scanner-overlay').classList.add('active');
+  document.getElementById('manual-row').style.display = 'none';
+  document.getElementById('manual-input').value = '';
+  startCamera();
+}
+
+function closeScanner() {
+  stopCamera();
+  document.getElementById('scanner-overlay').classList.remove('active');
+}
+
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    scannerStream = stream;
+    const video = document.getElementById('scanner-video');
+    video.srcObject = stream;
+    video.play();
+    scannerInterval = setInterval(scanFrame, 300);
+  } catch (e) {
+    toast('Erro ao acessar a câmera. Use a entrada manual.', 'error');
+    document.getElementById('manual-row').style.display = 'flex';
+  }
+}
+
+function stopCamera() {
+  if (scannerInterval) { clearInterval(scannerInterval); scannerInterval = null; }
+  if (scannerStream) { scannerStream.getTracks().forEach(t => t.stop()); scannerStream = null; }
+}
+
+function scanFrame() {
+  const video = document.getElementById('scanner-video');
+  if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+  const canvas = document.getElementById('scanner-canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+  try {
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    if (typeof jsQR !== 'undefined') {
+      const code = jsQR(imageData.data, imageData.width, imageData.height);
+      if (code) onScanned(code.data);
+    }
+  } catch {}
+}
+
+function onScanned(value) {
+  stopCamera();
+  document.getElementById('scanner-overlay').classList.remove('active');
+  if (scanType === 'Rua') { formRua = value; setQrField('rua', value); }
+  else { formSku = value; setQrField('sku', value); }
+  toast(`${scanType} lido: ${value}`, 'success');
+}
+
+function toggleManual() {
+  const row = document.getElementById('manual-row');
+  row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+}
+
+function submitManual() {
+  const val = document.getElementById('manual-input').value.trim();
+  if (!val) return;
+  onScanned(val);
+}
+
+// ══════════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════════
+let toastTimeout;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => el.className = '', 3000);
+}
+
+// Sync btn hidden - not needed with Supabase
+document.getElementById('sync-btn').style.display = 'none';
+
+// Enter key handlers
+document.getElementById('login-pass').addEventListener('keydown', e => e.key === 'Enter' && doLogin());
+document.getElementById('manual-input').addEventListener('keydown', e => e.key === 'Enter' && submitManual());
+
+</script>
+
+<!-- jsQR library for QR code scanning -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+</body>
+</html>
