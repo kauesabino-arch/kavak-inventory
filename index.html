@@ -565,7 +565,7 @@
     <p class="subtitle">Leia os QR Codes e informe a quantidade</p>
 
     <div class="qr-field" id="qr-rua" onclick="openScanner('Rua')">
-      <span class="qr-field-icon">🏭</span>
+      <span class="qr-field-icon">🗄️</span>
       <div class="qr-field-info">
         <div class="qr-field-label">Rua</div>
         <div class="qr-field-value empty" id="qr-rua-val">Toque para ler QR Code</div>
@@ -832,7 +832,7 @@ function doLogout() {
 // FORMULÁRIO
 // ══════════════════════════════════════════════════════════════
 async function submitForm() {
-  if (!formRua) return toast('Leia o QR Code da Rua', 'error');
+  if (!formRua) return toa st('Leia o QR Code da Rua', 'error');
   if (!formSku) return toast('Leia o QR Code do SKU', 'error');
   if (!validateRua(formRua)) return toast(`Rua inválida: ${formRua}`, 'error');
   if (!validateSku(formSku)) return toast(`SKU inválido: ${formSku}`, 'error');
@@ -1193,7 +1193,7 @@ function scanFrame() {
 // ══════════════════════════════════════════════════════════════
 // VALIDAÇÃO
 // ══════════════════════════════════════════════════════════════
-const REGEX_RUA = /^R\d{1,2}A\d{1,3}$/i;
+const REGEX_RUA = /^R\d{1,2}[A-Z]\d{1,3}$/i;
 const REGEX_SKU = /^\d{3}-\d{6}$/;
 
 function validateRua(val) {
