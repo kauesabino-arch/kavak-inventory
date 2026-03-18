@@ -834,6 +834,8 @@ function doLogout() {
 async function submitForm() {
   if (!formRua) return toast('Leia o QR Code da Rua', 'error');
   if (!formSku) return toast('Leia o QR Code do SKU', 'error');
+  if (!validateRua(formRua)) return toast(`Rua inválida: ${formRua}`, 'error');
+  if (!validateSku(formSku)) return toast(`SKU inválido: ${formSku}`, 'error');
   const qty = parseInt(document.getElementById('form-qty').value);
   if (isNaN(qty)) return toast('Informe a quantidade', 'error');
   const obs = document.getElementById('form-obs').value.trim();
@@ -1188,12 +1190,41 @@ function scanFrame() {
   } catch {}
 }
 
+// ══════════════════════════════════════════════════════════════
+// VALIDAÇÃO
+// ══════════════════════════════════════════════════════════════
+const REGEX_RUA = /^R\d{1,2}A\d{1,3}$/i;
+const REGEX_SKU = /^\d{3}-\d{6}$/;
+
+function validateRua(val) {
+  return REGEX_RUA.test(val.trim().toUpperCase());
+}
+
+function validateSku(val) {
+  return REGEX_SKU.test(val.trim().toUpperCase());
+}
+
 function onScanned(value) {
+  const val = value.trim().toUpperCase();
   stopCamera();
   document.getElementById('scanner-overlay').classList.remove('active');
-  if (scanType === 'Rua') { formRua = value; setQrField('rua', value); }
-  else { formSku = value; setQrField('sku', value); }
-  toast(`${scanType} lido: ${value}`, 'success');
+
+  if (scanType === 'Rua') {
+    if (!validateRua(val)) {
+      toast(`❌ Rua inválida: "${val}"\nFormato esperado: R01A01`, 'error');
+      return;
+    }
+    formRua = val;
+    setQrField('rua', val);
+  } else {
+    if (!validateSku(val)) {
+      toast(`❌ SKU inválido: "${val}"\nFormato esperado: 000-000000`, 'error');
+      return;
+    }
+    formSku = val;
+    setQrField('sku', val);
+  }
+  toast(`${scanType} lido: ${val}`, 'success');
 }
 
 function toggleManual() {
