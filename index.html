@@ -169,9 +169,9 @@
   /* ── Toast ── */
   #toast {
     position: fixed;
-    bottom: 80px;
+    bottom: 90px;
     left: 50%;
-    transform: translateX(-50%) translateY(100px);
+    transform: translateX(-50%);
     background: var(--surface);
     color: var(--text);
     padding: 12px 20px;
@@ -179,13 +179,16 @@
     font-size: 14px;
     font-weight: 500;
     z-index: 999;
-    transition: transform 0.3s;
+    transition: opacity 0.3s, visibility 0.3s;
     border: 1px solid var(--border);
     white-space: nowrap;
     max-width: 90vw;
     text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
   }
-  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.show { opacity: 1; visibility: visible; }
   #toast.success { border-color: var(--success); color: var(--success); }
   #toast.error { border-color: var(--error); color: var(--error); }
   #toast.warning { border-color: var(--warning); color: var(--warning); }
@@ -235,10 +238,24 @@
     pointer-events: none;
   }
   .scanner-frame {
-    width: 160px;
-    height: 160px;
+    width: var(--scan-size, 160px);
+    height: var(--scan-size, 160px);
     border: 2px solid var(--blue);
     border-radius: 12px;
+    transition: width 0.2s, height 0.2s;
+  }
+  .scanner-size-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
   }
   .scanner-hint {
     color: rgba(255,255,255,0.8);
@@ -480,6 +497,7 @@
     <div class="scanner-hint">Aponte a câmera para o QR Code</div>
   </div>
   <button class="scanner-close" onclick="closeScanner()">✕</button>
+  <button class="scanner-size-btn" onclick="toggleScanSize()" id="scan-size-btn">🔍 80px</button>
   <div class="scanner-manual">
     <button class="scanner-manual-toggle" onclick="toggleManual()">⌨️ Inserir manualmente</button>
     <div id="manual-row" style="display:none" class="scanner-manual-row">
@@ -565,7 +583,7 @@
     <p class="subtitle">Leia os QR Codes e informe a quantidade</p>
 
     <div class="qr-field" id="qr-rua" onclick="openScanner('Rua')">
-      <span class="qr-field-icon">🗄️</span>
+      <span class="qr-field-icon">🏭</span>
       <div class="qr-field-info">
         <div class="qr-field-label">Rua</div>
         <div class="qr-field-value empty" id="qr-rua-val">Toque para ler QR Code</div>
@@ -1170,8 +1188,8 @@ function scanFrame() {
   const vw = video.videoWidth;
   const vh = video.videoHeight;
 
-  // Crop to center 40% of the frame — matches the smaller blue square on screen
-  const cropSize = Math.min(vw, vh) * 0.4;
+  // Crop dynamically based on selected scan size
+  const cropSize = Math.min(vw, vh) * (window._scanCrop || 0.4);
   const cropX = (vw - cropSize) / 2;
   const cropY = (vh - cropSize) / 2;
 
@@ -1252,6 +1270,52 @@ function toast(msg, type = '') {
 
 // Sync btn hidden - not needed with Supabase
 document.getElementById('sync-btn').style.display = 'none';
+
+// ══════════════════════════════════════════════════════════════
+// TOGGLE SCAN SIZE
+// ══════════════════════════════════════════════════════════════
+let scanSizeSmall = false;
+function toggleScanSize() {
+  scanSizeSmall = !scanSizeSmall;
+  const size = scanSizeSmall ? '80px' : '160px';
+  const crop = scanSizeSmall ? 0.2 : 0.4;
+  document.documentElement.style.setProperty('--scan-size', size);
+  document.getElementById('scan-size-btn').textContent = scanSizeSmall ? '🔍 160px' : '🔍 80px';
+  window._scanCrop = crop;
+}
+window._scanCrop = 0.4;
+
+// ══════════════════════════════════════════════════════════════
+// SWIPE NAVIGATION
+// ══════════════════════════════════════════════════════════════
+const tabs = ['historico', 'form', 'perfil'];
+let touchStartX = 0;
+let touchStartY = 0;
+
+document.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  // Only horizontal swipes (dx > 60, dy < 80)
+  if (Math.abs(dx) < 60 || Math.abs(dy) > 80) return;
+  // Ignore swipes inside scanner
+  if (document.getElementById('scanner-overlay').classList.contains('active')) return;
+  // Ignore swipes inside modals
+  if (document.querySelector('.modal-overlay.active')) return;
+
+  const activeScreen = document.querySelector('.screen.active');
+  if (!activeScreen || !currentUser) return;
+  const screenMap = { 'screen-historico': 0, 'screen-form': 1, 'screen-perfil': 2 };
+  const currentIdx = screenMap[activeScreen.id];
+  if (currentIdx === undefined) return;
+
+  if (dx < -60 && currentIdx < tabs.length - 1) switchTab(tabs[currentIdx + 1]);
+  if (dx > 60 && currentIdx > 0) switchTab(tabs[currentIdx - 1]);
+}, { passive: true });
 
 // Enter key handlers
 document.getElementById('login-pass').addEventListener('keydown', e => e.key === 'Enter' && doLogin());
