@@ -832,7 +832,7 @@ function doLogout() {
 // FORMULÁRIO
 // ══════════════════════════════════════════════════════════════
 async function submitForm() {
-  if (!formRua) return toa st('Leia o QR Code da Rua', 'error');
+  if (!formRua) return toast('Leia o QR Code da Rua', 'error');
   if (!formSku) return toast('Leia o QR Code do SKU', 'error');
   if (!validateRua(formRua)) return toast(`Rua inválida: ${formRua}`, 'error');
   if (!validateSku(formSku)) return toast(`SKU inválido: ${formSku}`, 'error');
