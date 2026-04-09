@@ -480,6 +480,77 @@
 
   .section-title { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
   .header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+
+  /* ── Modo Registro ── */
+  .mode-select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+    margin-bottom: 16px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239E9E9E' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  .rua-locked {
+    background: rgba(0,87,255,0.08);
+    border: 1.5px solid var(--blue);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .rua-locked-label { font-size: 11px; color: var(--text2); }
+  .rua-locked-value { font-size: 15px; font-weight: 700; color: var(--blue); }
+  .rua-desbtn {
+    background: rgba(255,59,48,0.12);
+    border: none;
+    border-radius: 8px;
+    padding: 4px 10px;
+    color: var(--error);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .sku-list {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .sku-list-header {
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+  }
+  .sku-list-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    gap: 8px;
+  }
+  .sku-list-item:last-child { border-bottom: none; }
+  .sku-list-sku { flex: 1; font-size: 13px; font-weight: 600; }
+  .sku-list-qty { font-size: 12px; color: var(--text2); }
+  .sku-list-del { background: none; border: none; color: var(--error); font-size: 14px; cursor: pointer; padding: 2px; }
+  .sku-list-empty { padding: 16px 14px; font-size: 13px; color: var(--text2); text-align: center; }
 </style>
 </head>
 <body>
@@ -541,9 +612,20 @@
 </div>
 
 <!-- ══════════════════════════════════════════ -->
+<!-- SCREEN: LOADING -->
+<!-- ══════════════════════════════════════════ -->
+<div class="screen active" id="screen-loading">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:16px">
+    <div class="logo-box" style="width:52px;height:52px;font-size:26px">K</div>
+    <div class="spinner" style="border-top-color:var(--blue)"></div>
+    <p style="color:var(--text2);font-size:13px">Conectando...</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
 <!-- SCREEN: LOGIN -->
 <!-- ══════════════════════════════════════════ -->
-<div class="screen active" id="screen-login">
+<div class="screen" id="screen-login">
   <div class="scroll-content">
     <div class="logo">
       <div class="logo-box">K</div>
@@ -579,30 +661,81 @@
 <!-- ══════════════════════════════════════════ -->
 <div class="screen" id="screen-form">
   <div class="scroll-content">
-    <h2>Novo Inventário</h2>
-    <p class="subtitle">Leia os QR Codes e informe a quantidade</p>
+    <!-- Header com título, dropdown e cancelar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <h2 style="margin-bottom:0">Novo Inventário</h2>
+      <button id="cancel-rua-btn" onclick="confirmarCancelar()" style="display:none;background:rgba(255,59,48,0.12);border:none;border-radius:8px;padding:6px 12px;color:var(--error);font-size:12px;font-weight:600;cursor:pointer">✕ Cancelar Rua</button>
+    </div>
+    <select class="mode-select" id="mode-select" onchange="switchMode(this.value)">
+      <option value="individual">📦 Registro Individual</option>
+      <option value="porrua">🏭 Registro por Rua</option>
+    </select>
 
-    <div class="qr-field" id="qr-rua" onclick="openScanner('Rua')">
-      <span class="qr-field-icon">🏭</span>
-      <div class="qr-field-info">
-        <div class="qr-field-label">Rua</div>
-        <div class="qr-field-value empty" id="qr-rua-val">Toque para ler QR Code</div>
+    <!-- MODO INDIVIDUAL -->
+    <div id="mode-individual">
+      <div class="qr-field" id="qr-rua" onclick="openScanner('Rua')">
+        <span class="qr-field-icon">🏭</span>
+        <div class="qr-field-info">
+          <div class="qr-field-label">Rua</div>
+          <div class="qr-field-value empty" id="qr-rua-val">Toque para ler QR Code</div>
+        </div>
+        <span id="qr-rua-icon">⬜</span>
       </div>
-      <span id="qr-rua-icon">⬜</span>
+      <div class="qr-field" id="qr-sku" onclick="openScanner('SKU')">
+        <span class="qr-field-icon">📦</span>
+        <div class="qr-field-info">
+          <div class="qr-field-label">SKU</div>
+          <div class="qr-field-value empty" id="qr-sku-val">Toque para ler QR Code</div>
+        </div>
+        <span id="qr-sku-icon">⬜</span>
+      </div>
+      <div class="field"><label>Quantidade</label><input id="form-qty" type="number" placeholder="0" inputmode="numeric"></div>
+      <div class="field"><label>Observações (opcional)</label><textarea id="form-obs" placeholder="Ex: peças danificadas..."></textarea></div>
+      <button class="btn btn-primary" onclick="submitForm()" id="form-btn">✓ Registrar</button>
     </div>
 
-    <div class="qr-field" id="qr-sku" onclick="openScanner('SKU')">
-      <span class="qr-field-icon">📦</span>
-      <div class="qr-field-info">
-        <div class="qr-field-label">SKU</div>
-        <div class="qr-field-value empty" id="qr-sku-val">Toque para ler QR Code</div>
+    <!-- MODO POR RUA -->
+    <div id="mode-porrua" style="display:none">
+      <!-- Rua não selecionada -->
+      <div id="pr-rua-picker">
+        <div class="qr-field" onclick="openScanner('Rua-PR')">
+          <span class="qr-field-icon">🏭</span>
+          <div class="qr-field-info">
+            <div class="qr-field-label">Rua</div>
+            <div class="qr-field-value empty">Toque para ler QR Code da Rua</div>
+          </div>
+          <span>⬜</span>
+        </div>
       </div>
-      <span id="qr-sku-icon">⬜</span>
+      <!-- Rua selecionada e travada -->
+      <div id="pr-rua-locked" style="display:none">
+        <div class="rua-locked">
+          <div>
+            <div class="rua-locked-label">Rua selecionada</div>
+            <div class="rua-locked-value" id="pr-rua-val">—</div>
+          </div>
+          <button class="rua-desbtn" onclick="desabilitarRua()">Desab.</button>
+        </div>
+        <!-- SKU picker -->
+        <div class="qr-field" onclick="openScanner('SKU-PR')">
+          <span class="qr-field-icon">📦</span>
+          <div class="qr-field-info">
+            <div class="qr-field-label">SKU</div>
+            <div class="qr-field-value empty" id="pr-sku-val">Toque para ler QR Code do SKU</div>
+          </div>
+          <span id="pr-sku-icon">⬜</span>
+        </div>
+        <div class="field"><label>Quantidade</label><input id="pr-qty" type="number" placeholder="0" inputmode="numeric"></div>
+        <div class="field"><label>Observações (opcional)</label><textarea id="pr-obs" placeholder="Ex: peças danificadas..."></textarea></div>
+        <button class="btn btn-outline" onclick="addSkuToList()" style="margin-bottom:14px">+ Adicionar SKU</button>
+        <!-- Lista de SKUs adicionados -->
+        <div class="sku-list" id="pr-sku-list">
+          <div class="sku-list-header">SKUs registrados nesta rua</div>
+          <div id="pr-sku-items"><div class="sku-list-empty">Nenhum SKU adicionado</div></div>
+        </div>
+        <button class="btn btn-primary" onclick="finalizarRua()" id="pr-finalizar-btn" disabled style="opacity:0.5">✓ Finalizar Rua</button>
+      </div>
     </div>
-
-    <div class="field"><label>Quantidade</label><input id="form-qty" type="number" placeholder="0" inputmode="numeric"></div>
-    <div class="field"><label>Observações (opcional)</label><textarea id="form-obs" placeholder="Ex: peças danificadas..."></textarea></div>
-    <button class="btn btn-primary" onclick="submitForm()" id="form-btn">✓ Registrar</button>
 
     <p style="text-align:center;font-size:12px;color:var(--text2);margin-top:12px">
       Registrando como <span id="form-username" style="color:var(--blue)"></span>
@@ -737,11 +870,153 @@ let formRua = null;
 let formSku = null;
 let scanType = null;
 
+// Modo por rua
+let modoAtual = 'individual'; // 'individual' | 'porrua'
+let prRua = null;       // rua travada no modo por rua
+let prSku = null;       // sku atual sendo adicionado
+let prSkuList = [];     // lista de {sku, quantidade, observacoes}
+
+function switchMode(val) {
+  modoAtual = val;
+  document.getElementById('mode-individual').style.display = val === 'individual' ? 'block' : 'none';
+  document.getElementById('mode-porrua').style.display = val === 'porrua' ? 'block' : 'none';
+  document.getElementById('cancel-rua-btn').style.display = 'none';
+  // Reset estado por rua
+  prRua = null; prSku = null; prSkuList = [];
+  document.getElementById('pr-rua-picker').style.display = 'block';
+  document.getElementById('pr-rua-locked').style.display = 'none';
+  renderSkuList();
+}
+
+function desabilitarRua() {
+  // Só limpa a rua — mantém SKUs, qtd e obs
+  prRua = null;
+  document.getElementById('pr-rua-picker').style.display = 'block';
+  document.getElementById('pr-rua-locked').style.display = 'none';
+  document.getElementById('cancel-rua-btn').style.display = 'none';
+  // Mantém a lista de SKUs visível abaixo do picker
+  renderSkuList();
+  toast('Rua liberada. SKUs mantidos.', 'warning');
+}
+
+function confirmarCancelar() {
+  // Mostra mini confirmação no toast
+  const el = document.getElementById('toast');
+  el.innerHTML = 'Apagar tudo? <button onclick="cancelarRua()" style="margin-left:8px;background:var(--error);border:none;border-radius:5px;padding:2px 8px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">Sim</button> <button onclick="document.getElementById(\'toast\').className=\'\';" style="margin-left:4px;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:2px 8px;color:var(--text);font-size:11px;cursor:pointer">Não</button>';
+  el.className = 'show warning';
+  clearTimeout(window._tt);
+  window._tt = setTimeout(() => { el.className = ''; el.textContent = ''; }, 5000);
+}
+
+function cancelarRua() {
+  // Apaga tudo — rua + todos os SKUs
+  prRua = null; prSku = null; prSkuList = [];
+  document.getElementById('pr-rua-picker').style.display = 'block';
+  document.getElementById('pr-rua-locked').style.display = 'none';
+  document.getElementById('cancel-rua-btn').style.display = 'none';
+  // Limpa campos
+  document.getElementById('pr-qty').value = '';
+  document.getElementById('pr-obs').value = '';
+  document.getElementById('pr-sku-val').textContent = 'Toque para ler QR Code do SKU';
+  document.getElementById('pr-sku-val').className = 'qr-field-value empty';
+  document.getElementById('pr-sku-icon').textContent = '⬜';
+  renderSkuList();
+  toast('Rua cancelada.', 'error');
+}
+
+function addSkuToList() {
+  if (!prSku) return toast('Leia o QR Code do SKU', 'error');
+  const qty = parseInt(document.getElementById('pr-qty').value);
+  if (isNaN(qty) || qty <= 0) return toast('Informe a quantidade', 'error');
+  const obs = document.getElementById('pr-obs').value.trim();
+  prSkuList.push({ sku: prSku, quantidade: qty, observacoes: obs || null });
+  prSku = null;
+  document.getElementById('pr-sku-val').textContent = 'Toque para ler QR Code do SKU';
+  document.getElementById('pr-sku-val').className = 'qr-field-value empty';
+  document.getElementById('pr-sku-icon').textContent = '⬜';
+  document.getElementById('pr-qty').value = '';
+  document.getElementById('pr-obs').value = '';
+  renderSkuList();
+  toast('SKU adicionado!', 'success');
+}
+
+function removeSkuFromList(idx) {
+  prSkuList.splice(idx, 1);
+  renderSkuList();
+}
+
+function renderSkuList() {
+  const el = document.getElementById('pr-sku-items');
+  const btn = document.getElementById('pr-finalizar-btn');
+  if (!prSkuList.length) {
+    el.innerHTML = '<div class="sku-list-empty">Nenhum SKU adicionado</div>';
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    return;
+  }
+  btn.disabled = false;
+  btn.style.opacity = '1';
+  el.innerHTML = prSkuList.map((item, i) => `
+    <div class="sku-list-item" style="flex-direction:column;align-items:stretch;gap:6px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="sku-list-sku" style="flex:1">${item.sku}</div>
+        <button class="sku-list-del" onclick="removeSkuFromList(${i})">🗑️</button>
+      </div>
+      <div style="display:flex;gap:6px">
+        <input type="number" value="${item.quantidade}" min="1"
+          style="width:72px;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:5px 8px;color:var(--text);font-size:12px;outline:none"
+          onchange="prSkuList[${i}].quantidade = parseInt(this.value)||1">
+        <input type="text" value="${item.observacoes||''}" placeholder="Obs..."
+          style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:5px 8px;color:var(--text);font-size:12px;outline:none"
+          onchange="prSkuList[${i}].observacoes = this.value.trim()||null">
+      </div>
+    </div>
+  `).join('');
+}
+
+async function finalizarRua() {
+  if (!prRua || !prSkuList.length) return toast('Adicione ao menos um SKU', 'error');
+  const btn = document.getElementById('pr-finalizar-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div>';
+  let erros = 0;
+  for (const item of prSkuList) {
+    const record = {
+      id: uuid(),
+      user_id: currentUser.id,
+      user_name: currentUser.name,
+      rua: prRua,
+      sku: item.sku,
+      quantidade: item.quantidade,
+      observacoes: item.observacoes,
+      created_at: new Date().toISOString()
+    };
+    try {
+      await sb('inventory', { method: 'POST', prefer: 'return=minimal', body: JSON.stringify(record) });
+    } catch(e) { erros++; }
+  }
+  btn.disabled = false;
+  btn.textContent = '✓ Finalizar Rua';
+  if (erros === 0) {
+    toast(`✓ ${prSkuList.length} SKUs registrados na ${prRua}!`, 'success');
+  } else {
+    toast(`⚠️ ${erros} erros ao salvar`, 'warning');
+  }
+  // Reset para próxima rua
+  prRua = null; prSku = null; prSkuList = [];
+  document.getElementById('pr-rua-picker').style.display = 'block';
+  document.getElementById('pr-rua-locked').style.display = 'none';
+  document.getElementById('cancel-rua-btn').style.display = 'none';
+  renderSkuList();
+}
+
 // ══════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════
 async function init() {
-  // Create default admin if not exists
+  // Mostra loading enquanto conecta
+  showScreen('loading');
+
   try {
     const existing = await sb('users?username=eq.admin&select=id');
     if (!existing || existing.length === 0) {
@@ -753,11 +1028,27 @@ async function init() {
     }
   } catch(e) { console.log('Init error:', e); }
 
+  // Tenta sessão salva primeiro
   const session = getSession();
   if (session) {
     currentUser = session;
     showMainApp();
+    return;
   }
+
+  // Auto-login como admin — sem tela de login
+  try {
+    const users = await sb('users?username=eq.admin&active=eq.true&select=*');
+    if (users && users.length > 0) {
+      currentUser = users[0];
+      saveSession(currentUser);
+      showMainApp();
+      return;
+    }
+  } catch(e) {}
+
+  // Fallback: mostra login se falhar
+  showScreen('login');
 }
 
 init();
@@ -1228,21 +1519,38 @@ function onScanned(value) {
   document.getElementById('scanner-overlay').classList.remove('active');
 
   if (scanType === 'Rua') {
-    if (!validateRua(val)) {
-      toast(`❌ Rua inválida: "${val}"\nFormato esperado: R01A01`, 'error');
-      return;
-    }
+    // Modo individual
+    if (!validateRua(val)) { toast(`❌ Rua inválida: "${val}"`, 'error'); return; }
     formRua = val;
     setQrField('rua', val);
+    toast(`Rua lida: ${val}`, 'success');
+
+  } else if (scanType === 'Rua-PR') {
+    // Modo por rua — trava a rua
+    if (!validateRua(val)) { toast(`❌ Rua inválida: "${val}"`, 'error'); return; }
+    prRua = val;
+    document.getElementById('pr-rua-val').textContent = val;
+    document.getElementById('pr-rua-picker').style.display = 'none';
+    document.getElementById('pr-rua-locked').style.display = 'block';
+    document.getElementById('cancel-rua-btn').style.display = 'block';
+    toast(`Rua ${val} selecionada!`, 'success');
+
+  } else if (scanType === 'SKU-PR') {
+    // Modo por rua — SKU atual
+    if (!validateSku(val)) { toast(`❌ SKU inválido: "${val}"`, 'error'); return; }
+    prSku = val;
+    document.getElementById('pr-sku-val').textContent = val;
+    document.getElementById('pr-sku-val').className = 'qr-field-value';
+    document.getElementById('pr-sku-icon').textContent = '✅';
+    toast(`SKU lido: ${val}`, 'success');
+
   } else {
-    if (!validateSku(val)) {
-      toast(`❌ SKU inválido: "${val}"\nFormato esperado: 000-000000`, 'error');
-      return;
-    }
+    // Modo individual — SKU
+    if (!validateSku(val)) { toast(`❌ SKU inválido: "${val}"`, 'error'); return; }
     formSku = val;
     setQrField('sku', val);
+    toast(`SKU lido: ${val}`, 'success');
   }
-  toast(`${scanType} lido: ${val}`, 'success');
 }
 
 function toggleManual() {
