@@ -725,7 +725,14 @@
           </div>
           <span id="pr-sku-icon">⬜</span>
         </div>
-        <div class="field"><label>Quantidade</label><input id="pr-qty" type="number" placeholder="0" inputmode="numeric"></div>
+        <div class="field">
+          <label>Quantidade</label>
+          <div style="display:flex;align-items:center;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface)">
+            <button onclick="changePrQty(-1)" style="background:var(--surface);border:none;color:var(--text);font-size:20px;font-weight:700;width:48px;height:48px;cursor:pointer;flex-shrink:0">−</button>
+            <div id="pr-qty-display" style="flex:1;text-align:center;font-size:16px;font-weight:700;height:48px;display:flex;align-items:center;justify-content:center;border-left:1px solid var(--border);border-right:1px solid var(--border);color:var(--text)">1</div>
+            <button onclick="changePrQty(1)" style="background:var(--surface);border:none;color:var(--text);font-size:20px;font-weight:700;width:48px;height:48px;cursor:pointer;flex-shrink:0">+</button>
+          </div>
+        </div>
         <div class="field"><label>Observações (opcional)</label><textarea id="pr-obs" placeholder="Ex: peças danificadas..."></textarea></div>
         <button class="btn btn-outline" onclick="addSkuToList()" style="margin-bottom:14px">+ Adicionar SKU</button>
         <!-- Lista de SKUs adicionados -->
@@ -875,6 +882,12 @@ let modoAtual = 'individual'; // 'individual' | 'porrua'
 let prRua = null;       // rua travada no modo por rua
 let prSku = null;       // sku atual sendo adicionado
 let prSkuList = [];     // lista de {sku, quantidade, observacoes}
+let prQty = 1;          // quantidade atual no modo por rua
+
+function changePrQty(d) {
+  prQty = Math.max(1, prQty + d);
+  document.getElementById('pr-qty-display').textContent = prQty;
+}
 
 function switchMode(val) {
   modoAtual = val;
@@ -882,7 +895,8 @@ function switchMode(val) {
   document.getElementById('mode-porrua').style.display = val === 'porrua' ? 'block' : 'none';
   document.getElementById('cancel-rua-btn').style.display = 'none';
   // Reset estado por rua
-  prRua = null; prSku = null; prSkuList = [];
+  prRua = null; prSku = null; prSkuList = []; prQty = 1;
+  if(document.getElementById('pr-qty-display')) document.getElementById('pr-qty-display').textContent = '1';
   document.getElementById('pr-rua-picker').style.display = 'block';
   document.getElementById('pr-rua-locked').style.display = 'none';
   renderSkuList();
@@ -926,15 +940,14 @@ function cancelarRua() {
 
 function addSkuToList() {
   if (!prSku) return toast('Leia o QR Code do SKU', 'error');
-  const qty = parseInt(document.getElementById('pr-qty').value);
-  if (isNaN(qty) || qty <= 0) return toast('Informe a quantidade', 'error');
   const obs = document.getElementById('pr-obs').value.trim();
-  prSkuList.push({ sku: prSku, quantidade: qty, observacoes: obs || null });
+  prSkuList.push({ sku: prSku, quantidade: prQty, observacoes: obs || null });
   prSku = null;
+  prQty = 1;
   document.getElementById('pr-sku-val').textContent = 'Toque para ler QR Code do SKU';
   document.getElementById('pr-sku-val').className = 'qr-field-value empty';
   document.getElementById('pr-sku-icon').textContent = '⬜';
-  document.getElementById('pr-qty').value = '';
+  document.getElementById('pr-qty-display').textContent = '1';
   document.getElementById('pr-obs').value = '';
   renderSkuList();
   toast('SKU adicionado!', 'success');
